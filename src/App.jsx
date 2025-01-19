@@ -6,20 +6,68 @@ import GamesPage from './components/GamesPage';
 import ExchangePage from './components/ExchangePage';
 import BankPage from './components/BankPage';
 import ProfilePage from './components/ProfilePage';
+import Cookies from "js-cookie";
+import axios from 'axios';
+
+axios.defaults.withCredentials = true;
 
 function App() {
-  const [user, setUser] = useState(null)
-  const [pageId, setPageId] = useState(1)
+  const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [pageId, setPageId] = useState(1);
 
-  useEffect(() => {
-    let a = true;
-    if (a === true) {
-      setUser(true);
-    } else {
-      setUser(null);
+  // Асинхронная функция для получения данных пользователя
+  const fetchUserData = async (discordId) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:50001/get-user",
+        { discord_id: discordId }, // Передаём discord_id в body
+        {
+          withCredentials: true, // Если нужны cookies
+        }
+      );
+      return response.data; // Возвращаем данные пользователя
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        console.error("Пользователь не найден");
+      } else {
+        console.error("Ошибка сервера:", error);
+      }
+      return null;
     }
+  };
+
+  // useEffect для проверки cookies и загрузки данных пользователя
+  useEffect(() => {
+    const fetchAndSetUserData = async () => {
+      // Проверяем наличие cookies
+      const userCookie = Cookies.get("discord_user");
+      if (userCookie) {
+        try {
+          // Если cookie существует, преобразуем из JSON
+          const userDataCookie = JSON.parse(userCookie);
+
+          // Получаем данные пользователя с сервера
+          const userDataFetch = await fetchUserData(userDataCookie.id);
+          if (userDataFetch) {
+            setUserData(userDataFetch); // Устанавливаем данные из сервера
+            console.log("Данные из сервера:", userDataFetch);
+          }
+
+          setUser(userDataCookie); // Устанавливаем данные из cookies
+        } catch (error) {
+          console.error("Ошибка парсинга cookies или получения данных:", error);
+        }
+      } else {
+        // Если cookie не найдено, сбрасываем user
+        setUser(null);
+      }
+    };
+
+    fetchAndSetUserData(); // Вызываем асинхронную функцию
   }, []);
 
+  // Функция для рендера текущей страницы
   const renderPage = () => {
     switch (pageId) {
       case 1:
@@ -31,25 +79,22 @@ function App() {
       case 4:
         return <BankPage />;
       case 5:
-        return <ProfilePage />;
+        return <ProfilePage user={user} userData={userData} />;
       default:
         return <MainPage />;
     }
   };
 
   return (
-    <div className="flex flex-col w-screen px-5 h-screen bg-zinc-900">
+    <div className="flex flex-col max-w-screen px-5 h-screen overflow-x-hidden bg-zinc-900">
       {/* Верхняя панель навигации */}
       <div className="w-full">
-        <NavBar user={user} setPageId={setPageId} />
+        <NavBar user={user} setUser={setUser} setPageId={setPageId} />
       </div>
 
       {/* Основной контент */}
-      <div className="rounded-lg shadow-lg h-full mb-3">
-        {renderPage()}
-      </div>
+      <div className="rounded-lg shadow-lg h-full mb-3">{renderPage()}</div>
     </div>
-
   );
 }
 

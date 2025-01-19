@@ -1,3 +1,34 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Глобальный стиль для всех скроллбаров */
+* {
+    scrollbar-width: thin; /* Firefox: тонкий скроллбар */
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent; /* Цвет ползунка и трека */
+  }
+  
+  *::-webkit-scrollbar {
+    width: 4px; /* Тонкий вертикальный скроллбар */
+    height: 4px; /* Тонкий горизонтальный скроллбар */
+  }
+  
+  *::-webkit-scrollbar-track {
+    background: transparent; /* Прозрачный трек */
+  }
+  
+  *::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3); /* Полупрозрачный ползунок */
+    border-radius: 10px; /* Закругленные края */
+    transition: background 0.2s ease-in-out; /* Плавный переход при наведении */
+  }
+  
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5); /* Ползунок становится ярче при наведении */
+  }
+  
+  /* Для мобильных устройств включить плавное прокручивание */
+  body, html {
+    -webkit-overflow-scrolling: touch; /* Плавное прокручивание на iOS */
+  }
+  
