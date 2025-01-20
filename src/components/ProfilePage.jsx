@@ -33,6 +33,9 @@ const ProfilePage = ({ user, userData }) => {
         <p className="mb-2">
           ID: {user.id}
         </p>
+        <p className="mb-2 cursor-pointer" onClick={() => {ChangeQuote}}>
+          Цитата: {user.quote || "Установите цитату, нажав на текст"}
+        </p>
       </div>
     </div>
   );

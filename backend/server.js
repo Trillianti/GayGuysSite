@@ -14,6 +14,24 @@ const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const REDIRECT_URI = process.env.DISCORD_REDIRECT_URL;
 
+const roleMapping = {
+    "1133370743481184326": 1, // Высший приоритет
+    "1093160551800111104": 2,
+    "1133375386525384734": 3,
+    "1093158986204844073": 4, // Низший приоритет
+};
+
+function getRoleId(roles) {
+    // Проверяем роли в порядке приоритетности
+    for (const [roleId, mappedId] of Object.entries(roleMapping)) {
+        if (roles.includes(roleId)) {
+            return mappedId; // Возвращаем ID роли, если она найдена
+        }
+    }
+    return null; // Если ничего не найдено
+}
+  
+
 // Авторизация через Discord
 app.get("/auth/discord/callback", async (req, res) => {
     const code = req.query.code;
@@ -47,17 +65,38 @@ app.get("/auth/discord/callback", async (req, res) => {
 
         const userData = userResponse.data;
 
-        // Сохраняем данные в базу данных
-        await db.execute(
-            `INSERT INTO users (discord_id, global_name, username, avatar, access_token, coin)
-             VALUES (?, ?, ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE
-             global_name = VALUES(global_name), username = VALUES(username),
-             avatar = VALUES(avatar), access_token = VALUES(access_token)`,
-            [userData.id, userData.global_name || userData.username, userData.username, userData.avatar, accessToken, 0]
+        // Получаем роли пользователя на сервере
+        const guildMemberResponse = await axios.get(
+            `https://discord.com/api/guilds/1051792766130208859/members/${userData.id}`,
+            {
+                headers: { Authorization: `Bot ${process.env.BOT_TOKEN}` },
+            }
         );
 
-        // Устанавливаем cookies
+        const memberData = guildMemberResponse.data;
+        const roles = memberData.roles; // Массив ID ролей пользователя на сервере
+        const role = getRoleId(roles); // Получаем роль пользователя
+
+        await db.execute(
+            `INSERT INTO users (discord_id, global_name, username, avatar, access_token, coin, role)
+             VALUES (?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+             global_name = VALUES(global_name),
+             username = VALUES(username),
+             avatar = VALUES(avatar),
+             access_token = VALUES(access_token),
+             role = VALUES(role)`,
+            [
+                userData.id,
+                userData.global_name || userData.username,
+                userData.username,
+                userData.avatar,
+                accessToken,
+                0, // Начальные монеты
+                role, // Выбранная роль
+            ]
+        );
+
         res.cookie("discord_user", JSON.stringify(userData), {
             httpOnly: false,
             secure: false,
@@ -80,6 +119,7 @@ app.get("/auth/discord/callback", async (req, res) => {
         }
     }
 });
+
 
 // Получение списка пользователей
 app.get("/users", async (req, res) => {
@@ -122,17 +162,21 @@ app.post("/get-user", async (req, res) => {
     }
 });
 
-app.get("get-quotes", async (req, res) => {
+app.get("/get-quotes", async (req, res) => { 
     try {
         const [rows] = await db.execute("SELECT global_name, discord_id, avatar, quote, role FROM users");
+
         if (rows.length === 0) {
-            return rows;
+            return res.status(404).json({ message: "Данные не найдены" });
         }
+
+        res.json(rows);
     } catch (error) {
         console.error("Ошибка в /get-quotes: ", error);
-        res.status(500).json({ error: "Ошибка сервера "});
+        res.status(500).json({ error: "Ошибка сервера" });
     }
 });
+
 
 // Запуск сервера
 app.listen(50001, () => {

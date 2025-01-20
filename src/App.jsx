@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
+import Cookies from 'js-cookie';
 import './App.css';
+
+// Компоненты
 import NavBar from './components/NavBar';
 import MainPage from './components/MainPage';
 import GamesPage from './components/GamesPage';
 import ExchangePage from './components/ExchangePage';
 import BankPage from './components/BankPage';
 import ProfilePage from './components/ProfilePage';
-import Cookies from "js-cookie";
-import axios from 'axios';
 
 axios.defaults.withCredentials = true;
 
@@ -51,12 +53,11 @@ function App() {
           const userDataFetch = await fetchUserData(userDataCookie.id);
           if (userDataFetch) {
             setUserData(userDataFetch); // Устанавливаем данные из сервера
-            console.log("Данные из сервера:", userDataFetch);
           }
 
           setUser(userDataCookie); // Устанавливаем данные из cookies
         } catch (error) {
-          console.error("Ошибка парсинга cookies или получения данных:", error);
+          console.error("Ошибка парсинга cookies или получения данных: ", error);
         }
       } else {
         // Если cookie не найдено, сбрасываем user
@@ -91,7 +92,8 @@ function App() {
       <div className="w-full">
         <NavBar user={user} setUser={setUser} setPageId={setPageId} />
       </div>
-
+      <div className="gradient-background absolute bottom-5 left-5"></div>
+      <div className="gradient-background absolute bottom-5 right-5"></div>
       {/* Основной контент */}
       <div className="rounded-lg shadow-lg h-full mb-3">{renderPage()}</div>
     </div>
