@@ -108,11 +108,11 @@ const MainPage = () => {
   ];
   
   const completedStages = roadmap.filter((stage) => stage.status === "completed").length;
+  
   useEffect(() => {
-    // Обновляем ширину с небольшой задержкой, чтобы анимация сработала
     const timeout = setTimeout(() => {
       setProgressWidth((completedStages / roadmap.length) * 100);
-    }, 100); // Задержка, чтобы активировать transition
+    }, 100);
 
     return () => clearTimeout(timeout);
   }, [completedStages, roadmap.length]);
@@ -121,31 +121,29 @@ const MainPage = () => {
     stage.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-
   const truncateText = (text, maxLength) => {
     return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
   };
 
   return (
-    <div className="bg-zinc-900 text-white px-6 py-12 flex flex-col">
-      <h1 className="text-4xl font-bold text-center mb-4 z-10">Дорожная карта сообщества</h1>
-
-      <p className="text-sm text-center text-gray-400 italic mb-12 z-10">
-        Обратите внимание: Даты и этапы могут быть изменены в зависимости от текущих потребностей и приоритетов сообщества.
+    <div className="bg-zinc-900 text-white py-12 flex flex-col min-h-screen">
+      <h1 className="text-4xl font-bold text-center mb-6">Дорожная карта сообщества</h1>
+      <p className="text-center text-gray-400 italic mb-8">
+        Следите за развитием платформы! Даты и этапы могут изменяться.
       </p>
 
       {/* Поле для поиска */}
-      <div className="flex justify-center mb-6 z-10">
+      <div className="flex justify-center mb-6">
         <input
           type="text"
-          placeholder="Искать этап..."
-          className="p-2 rounded bg-gray-800 text-white w-full max-w-md"
+          placeholder="Поиск этапа..."
+          className="p-3 rounded bg-gray-800 text-white w-full max-w-md focus:outline-none focus:ring focus:ring-blue-500"
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
 
       {/* Полоса прогресса */}
-      <div className="w-full bg-gray-700 rounded-full h-2 mb-12 z-10">
+      <div className="w-full max-w-4xl mx-auto bg-gray-700 rounded-full h-3 mb-12">
         <div
           className="bg-green-500 h-full rounded-full transition-all duration-500 ease-in-out"
           style={{ width: `${progressWidth}%` }}
@@ -153,53 +151,59 @@ const MainPage = () => {
       </div>
 
       {/* Карточки этапов */}
-      <div className="flex flex-wrap justify-center gap-6 z-10">
-        {filteredRoadmap.map((stage, index) => (
-          <div
-            key={index}
-            className={`flex flex-col items-center w-56 p-4 rounded-lg shadow-md transition transform hover:scale-105 cursor-pointer ${
-              stage.status === "completed"
-                ? "bg-green-600 text-white border-green-800"
-                : stage.status === "current"
-                ? "bg-blue-600 text-white border-blue-800"
-                : "bg-gray-800 text-gray-400 border-gray-700"
-            } border-2`}
-            onClick={() => setSelectedStage(stage)}
-          >
-            {/* Иконка статуса */}
-            {stage.status === "completed" && <CheckCircleIcon className="w-6 h-6 text-green-200 mb-2" />}
-            {stage.status === "current" && <ClockIcon className="w-6 h-6 text-yellow-200 mb-2" />}
-            {stage.status === "upcoming" && <CalendarIcon className="w-6 h-6 text-gray-300 mb-2" />}
+      <div className="bg-gray-800 p-6 rounded-lg max-w-6xl mx-auto z-10 shadow-lg">
+        <h3 className="text-3xl font-semibold text-white mb-6 text-center">Временная шкала</h3>
+        <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+          {filteredRoadmap.map((stage, index) => (
+            <div
+              key={index}
+              className="relative p-5 bg-gray-700 rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1 cursor-pointer"
+              onClick={() => setSelectedStage(stage)}
+            >
+              <div
+                className={`absolute -top-3 -left-3 w-10 h-10 rounded-full flex items-center justify-center ${
+                  stage.status === "completed"
+                    ? "bg-green-500"
+                    : stage.status === "current"
+                    ? "bg-blue-500"
+                    : "bg-gray-500"
+                }`}
+              >
+                {stage.status === "completed" && <CheckCircleIcon className="w-6 h-6 text-white" />}
+                {stage.status === "current" && <ClockIcon className="w-6 h-6 text-white" />}
+                {stage.status === "upcoming" && <CalendarIcon className="w-6 h-6 text-white" />}
+              </div>
+              <div className="pl-12">
+                <h4 className="text-lg font-bold text-white mb-2">{stage.title}</h4>
+                <p className="text-sm text-gray-400 mb-4">{stage.date}</p>
+                <p className="text-sm text-gray-300">
+                  {stage.description
+                    ? stage.description.split(" ").slice(0, 8).join(" ") + (stage.description.split(" ").length > 10 ? " ..." : "")
+                    : "Описание этапа недоступно"}
+                </p>
 
-            {/* Дата этапа */}
-            <div className="text-xs uppercase font-bold text-center">{stage.date}</div>
-
-            {/* Заголовок этапа */}
-            <h2 className="text-lg font-bold mt-3 text-center">{stage.title}</h2>
-
-            {/* Ограниченное описание этапа */}
-            <p className="text-sm text-center mt-2">
-              {truncateText(stage.description, 60)} {/* Максимум 60 символов */}
-            </p>
-
-            {/* Статусный маркер */}
-            {stage.status === "completed" && (
-              <div className="mt-3 text-xs font-semibold text-green-200">Завершено</div>
-            )}
-            {stage.status === "current" && (
-              <div className="mt-3 text-xs font-semibold text-yellow-200">Текущий этап</div>
-            )}
-            {stage.status === "upcoming" && (
-              <div className="mt-3 text-xs font-semibold text-gray-300">Впереди</div>
-            )}
-          </div>
-        ))}
+              </div>
+              <div className="absolute bottom-0 right-0 m-2">
+                <span className="text-xs px-3 py-1 bg-gray-600 text-gray-300 rounded-full">
+                  {stage.status === "completed" ? "Завершено" : stage.status === "current" ? "Текущий" : "Будущий"}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Модальное окно для полного описания */}
+
+      {/* Модальное окно */}
       {selectedStage && (
-        <div className="fixed top-0 left-0 w-full h-full flex items-center z-20 justify-center bg-black bg-opacity-50">
-          <div className="bg-gray-800 text-white p-6 rounded-lg w-96">
+        <div
+          className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out z-20"
+          onClick={() => setSelectedStage(null)}
+        >
+          <div
+            className="bg-gray-800 text-white p-6 rounded-lg w-96 shadow-lg transform transition-transform duration-300 ease-out scale-105"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-xl font-bold mb-4">{selectedStage.title}</h2>
             <p className="mb-6">{selectedStage.description}</p>
             <button
@@ -212,7 +216,6 @@ const MainPage = () => {
         </div>
       )}
 
-      {/* TODO: подписной блок */}
       <SignatureBlock />
     </div>
   );

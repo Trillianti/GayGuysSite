@@ -6,7 +6,7 @@ require('dotenv').config({ path: '../.env' });
 
 const app = express();
 app.use(cors({
-    origin: "http://localhost:5173", // URL вашего фронтенда
+    origin: "https://walletellaw.store", // URL вашего фронтенда
     credentials: true, // Разрешить передачу cookies
 }), express.json());
 
@@ -33,7 +33,7 @@ function getRoleId(roles) {
   
 
 // Авторизация через Discord
-app.get("/auth/discord/callback", async (req, res) => {
+app.get("/api/auth/discord/callback", async (req, res) => {
     const code = req.query.code;
 
     if (!code) {
@@ -108,7 +108,7 @@ app.get("/auth/discord/callback", async (req, res) => {
             sameSite: "lax",
         });
 
-        res.redirect("http://localhost:5173");
+        res.redirect("https://walletellaw.store");
     } catch (error) {
         if (error.response) {
             console.error("Ошибка авторизации (API):", error.response.data);
@@ -122,7 +122,7 @@ app.get("/auth/discord/callback", async (req, res) => {
 
 
 // Получение списка пользователей
-app.get("/users", async (req, res) => {
+app.get("/api/users", async (req, res) => {
     try {
         const [rows] = await db.execute("SELECT * FROM users");
         res.json(rows);
@@ -133,14 +133,14 @@ app.get("/users", async (req, res) => {
 });
 
 // Выход из системы
-app.get("/logout", (req, res) => {
+app.get("/api/logout", (req, res) => {
     res.clearCookie("discord_user");
     res.clearCookie("discord_token");
     res.status(200).json({ success: true });
 });
 
 // Эндпоинт для получения данных пользователя по discord_id через body
-app.post("/get-user", async (req, res) => {
+app.post("/api/get-user", async (req, res) => {
     const { discord_id } = req.body; // Получаем discord_id из тела запроса
 
     if (!discord_id) {
@@ -162,7 +162,7 @@ app.post("/get-user", async (req, res) => {
     }
 });
 
-app.get("/get-quotes", async (req, res) => { 
+app.get("/api/get-quotes", async (req, res) => { 
     try {
         const [rows] = await db.execute("SELECT global_name, discord_id, avatar, quote, role FROM users");
 
@@ -177,9 +177,31 @@ app.get("/get-quotes", async (req, res) => {
     }
 });
 
+// Сохранение цитаты пользователя
+app.post("/api/save-quote", async (req, res) => {
+    const { discord_id, quote } = req.body;
+
+    if (!discord_id || !quote) {
+        return res.status(400).json({ error: "Не указаны discord_id или quote" });
+    }
+
+    try {
+        // Обновляем цитату в базе данных
+        await db.execute(
+            "UPDATE users SET quote = ? WHERE discord_id = ?",
+            [quote, discord_id]
+        );
+
+        res.status(200).json({ message: "Цитата успешно сохранена" });
+    } catch (error) {
+        console.error("Ошибка сохранения цитаты:", error);
+        res.status(500).json({ error: "Ошибка сервера" });
+    }
+});
+
+
 
 // Запуск сервера
 app.listen(50001, () => {
     console.log("Server start on 50001 port");
-    console.log("http://localhost:50001");
 });

@@ -5,7 +5,7 @@ const SignatureBlock = () => {
   const [usersByRole, setUsersByRole] = useState({});
   const fetchSignatureBlock = async () => {
     try {
-      const response = await axios.get("http://localhost:50001/get-quotes");
+      const response = await axios.get("/api/get-quotes");
       const users = response.data;
       // Группируем пользователей по ролям
       const groupedByRole = users.reduce((acc, user) => {
@@ -65,7 +65,7 @@ const SignatureBlock = () => {
                     &nbsp;&nbsp;{user.global_name}
                     </p>
                 </div>
-                <div className="italic font-thin font-sans text-center">{user.qoute || "Пока нет цитаты"}</div>
+                <div className="italic font-thin font-sans text-center">{user.quote || "Пока нет цитаты"}</div>
               </div>
             ))}
           </div>

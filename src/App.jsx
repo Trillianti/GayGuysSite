@@ -22,7 +22,7 @@ function App() {
   const fetchUserData = async (discordId) => {
     try {
       const response = await axios.post(
-        "http://localhost:50001/get-user",
+        "/api/get-user",
         { discord_id: discordId }, // Передаём discord_id в body
         {
           withCredentials: true, // Если нужны cookies
@@ -95,7 +95,7 @@ function App() {
       <div className="gradient-background absolute bottom-5 left-5"></div>
       <div className="gradient-background absolute bottom-5 right-5"></div>
       {/* Основной контент */}
-      <div className="rounded-lg shadow-lg h-full mb-3">{renderPage()}</div>
+      <div className="h-full mb-3">{renderPage()}</div>
     </div>
   );
 }
