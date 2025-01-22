@@ -3,12 +3,15 @@ import axios from "axios";
 
 const SignatureBlock = () => {
   const [usersByRole, setUsersByRole] = useState({});
+
   const fetchSignatureBlock = async () => {
     try {
       const response = await axios.get("/api/get-quotes");
       const users = response.data;
-      // Группируем пользователей по ролям
+
+      // Группируем пользователей по ролям, исключая тех, у кого нет роли
       const groupedByRole = users.reduce((acc, user) => {
+        if (!user.role) return acc; // Пропускаем пользователей без роли
         if (!acc[user.role]) acc[user.role] = [];
         acc[user.role].push(user);
         return acc;
@@ -19,15 +22,14 @@ const SignatureBlock = () => {
       console.error("Ошибка сервера:", error);
     }
   };
-  useEffect(() => {
-    
 
+  useEffect(() => {
     fetchSignatureBlock();
   }, []);
 
   return (
-    <div className="flex flex-col items-center  text-white py-10 px-5 z-10">
-        <h1 className="text-4xl font-bold text-center mb-4">Наш колектив</h1>
+    <div className="flex flex-col items-center text-white py-10 px-5 z-10">
+      <h1 className="text-4xl font-bold text-center mb-4">Наш колектив</h1>
       {Object.keys(usersByRole).map((role) => (
         <div key={role} className="mb-8 w-full">
           {/* Название роли */}
@@ -44,8 +46,8 @@ const SignatureBlock = () => {
           >
             {role === "1" && "👑 Мега гей"}
             {role === "2" && "🔴 Сенаторы"}
-            {role === "3" && "⚪ Модераторы"}
-            {role === "4" && "🔵 Новички"}
+            {role === "3" && "🟢 Модераторы"}
+            {role === "4" && "🔵 Натуральные геи"}
           </h3>
 
           {/* Карточки пользователей */}
@@ -56,16 +58,18 @@ const SignatureBlock = () => {
                 className="bg-gray-800 rounded-lg p-4 flex flex-col items-center justify-center shadow-lg w-64"
               >
                 <div className="flex items-center mb-2">
-                    <img
+                  <img
                     src={`https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png`}
                     alt={user.global_name}
                     className="w-12 h-12 rounded-full"
-                    />
-                    <p className="text-sm font-medium text-white">
+                  />
+                  <p className="text-sm font-medium text-white">
                     &nbsp;&nbsp;{user.global_name}
-                    </p>
+                  </p>
                 </div>
-                <div className="italic font-thin font-sans text-center">{user.quote || "Пока нет цитаты"}</div>
+                <div className="italic font-thin font-sans text-center">
+                  {user.quote || "Пока нет цитаты"}
+                </div>
               </div>
             ))}
           </div>

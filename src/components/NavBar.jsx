@@ -1,12 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
-
 const Navbar = ({ user, setUser, setPageId }) => {
-  const AUTH_URL =
-    "https://discord.com/oauth2/authorize?client_id=1330201160191185036&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A50001%2Fauth%2Fdiscord%2Fcallback&scope=identify";
+  const AUTH_URL = import.meta.env.VITE_AUTH_URL;
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
   const handleLogin = () => {
     window.location.href = AUTH_URL;
   };
@@ -17,7 +14,7 @@ const Navbar = ({ user, setUser, setPageId }) => {
         withCredentials: true,
       });
       setUser(null);
-      window.location.href = "http://localhost:5173"; // Перенаправление на клиенте
+      window.location.href = import.meta.env.VITE_MAIN_URL;
     } catch (error) {
       console.error("Ошибка выхода:", error);
     }
@@ -26,7 +23,7 @@ const Navbar = ({ user, setUser, setPageId }) => {
   return (
     <div className="py-3">
       <div className="flex w-full h-20 bg-gray-700 text-white rounded-xl shadow-lg select-none items-center justify-between px-6">
-        <div className="flex items-center cursor-pointer">
+        <div className="flex items-center cursor-pointer" onClick={() => setPageId(1)}>
           <img
             src="https://placehold.co/50"
             className="w-[50px] h-[50px] rounded-lg"
@@ -36,7 +33,7 @@ const Navbar = ({ user, setUser, setPageId }) => {
         </div>
 
         {/* Desktop Menu */}
-        <div className="hidden md:flex items-center space-x-4">
+        <div className="hidden md:flex items-center space-x-4 ">
           <div
             className="text-sm font-medium hover:text-gray-400 cursor-pointer"
             onClick={() => setPageId(1)}
@@ -90,7 +87,7 @@ const Navbar = ({ user, setUser, setPageId }) => {
         </div>
 
         {/* Mobile Menu Toggle */}
-        <div className="flex md:hidden">
+        <div className="flex md:hidden ">
           <button
             className="text-white focus:outline-none"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -106,7 +103,7 @@ const Navbar = ({ user, setUser, setPageId }) => {
 
       {/* Mobile Menu */}
       <div
-        className={`md:hidden bg-gray-700 text-white rounded-xl mt-2 shadow-lg transition-all duration-300 ease-in-out ${
+        className={`md:hidden bg-gray-700 text-white rounded-xl mt-2 shadow-lg transition-all duration-300 ease-in-out  ${
           isMobileMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
         } overflow-hidden`}
       >

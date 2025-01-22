@@ -126,14 +126,14 @@ const MainPage = () => {
   };
 
   return (
-    <div className="bg-zinc-900 text-white py-12 flex flex-col min-h-screen">
-      <h1 className="text-4xl font-bold text-center mb-6">Дорожная карта сообщества</h1>
-      <p className="text-center text-gray-400 italic mb-8">
+    <div className=" text-white py-12 flex flex-col min-h-screen">
+      <h1 className="text-4xl font-bold text-center mb-6 z-10">Дорожная карта сообщества</h1>
+      <p className="text-center text-gray-400 italic mb-8 z-10">
         Следите за развитием платформы! Даты и этапы могут изменяться.
       </p>
 
       {/* Поле для поиска */}
-      <div className="flex justify-center mb-6">
+      <div className="flex justify-center mb-6 z-10">
         <input
           type="text"
           placeholder="Поиск этапа..."
@@ -143,7 +143,7 @@ const MainPage = () => {
       </div>
 
       {/* Полоса прогресса */}
-      <div className="w-full max-w-4xl mx-auto bg-gray-700 rounded-full h-3 mb-12">
+      <div className="w-full max-w-4xl mx-auto bg-gray-700 rounded-full h-3 mb-12 z-10">
         <div
           className="bg-green-500 h-full rounded-full transition-all duration-500 ease-in-out"
           style={{ width: `${progressWidth}%` }}

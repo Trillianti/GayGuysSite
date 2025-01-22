@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
-    port: 5173,
+    port: 50000,
   },
   build: {
     outDir: 'dist', // Папка, куда будет собираться проект (по умолчанию dist)

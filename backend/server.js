@@ -3,13 +3,15 @@ const axios = require('axios');
 const cors = require('cors');
 const db = require('./db'); // Подключение к базе данных
 require('dotenv').config({ path: '../.env' });
+const cookieParser = require('cookie-parser');
 
 const app = express();
 app.use(cors({
-    origin: "https://walletellaw.store", // URL вашего фронтенда
+    origin: process.env.VITE_MAIN_URL, // URL вашего фронтенда
     credentials: true, // Разрешить передачу cookies
-}), express.json());
-
+}));
+app.use(express.json());
+app.use(cookieParser());
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const REDIRECT_URI = process.env.DISCORD_REDIRECT_URL;
@@ -22,26 +24,30 @@ const roleMapping = {
 };
 
 function getRoleId(roles) {
-    // Проверяем роли в порядке приоритетности
+    if (!roles || !Array.isArray(roles)) {
+        console.warn("Неверный формат ролей или роли отсутствуют");
+        return null;
+    }
+
     for (const [roleId, mappedId] of Object.entries(roleMapping)) {
         if (roles.includes(roleId)) {
-            return mappedId; // Возвращаем ID роли, если она найдена
+            return mappedId;
         }
     }
-    return null; // Если ничего не найдено
+
+    console.warn("Роль пользователя не найдена в маппинге");
+    return null;
 }
-  
 
 // Авторизация через Discord
-app.get("/api/auth/discord/callback", async (req, res) => {
+app.get("/auth/discord/callback", async (req, res) => {
     const code = req.query.code;
 
     if (!code) {
-        return res.status(400).send("Authorization code not provided");
+        return res.status(400).json({ error: "Authorization code not provided" });
     }
 
     try {
-        // Обмен кода на токен
         const tokenResponse = await axios.post(
             "https://discord.com/api/oauth2/token",
             new URLSearchParams({
@@ -51,21 +57,17 @@ app.get("/api/auth/discord/callback", async (req, res) => {
                 code,
                 redirect_uri: REDIRECT_URI,
             }),
-            {
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            }
+            { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
         );
 
         const accessToken = tokenResponse.data.access_token;
 
-        // Получаем данные пользователя
         const userResponse = await axios.get("https://discord.com/api/users/@me", {
             headers: { Authorization: `Bearer ${accessToken}` },
         });
 
         const userData = userResponse.data;
 
-        // Получаем роли пользователя на сервере
         const guildMemberResponse = await axios.get(
             `https://discord.com/api/guilds/1051792766130208859/members/${userData.id}`,
             {
@@ -74,8 +76,8 @@ app.get("/api/auth/discord/callback", async (req, res) => {
         );
 
         const memberData = guildMemberResponse.data;
-        const roles = memberData.roles; // Массив ID ролей пользователя на сервере
-        const role = getRoleId(roles); // Получаем роль пользователя
+        const roles = memberData.roles;
+        const role = getRoleId(roles);
 
         await db.execute(
             `INSERT INTO users (discord_id, global_name, username, avatar, access_token, coin, role)
@@ -93,68 +95,61 @@ app.get("/api/auth/discord/callback", async (req, res) => {
                 userData.avatar,
                 accessToken,
                 0, // Начальные монеты
-                role, // Выбранная роль
+                role,
             ]
         );
 
         res.cookie("discord_user", JSON.stringify(userData), {
             httpOnly: false,
-            secure: false,
+            secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
         });
         res.cookie("discord_token", accessToken, {
             httpOnly: false,
-            secure: false,
+            secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
         });
 
-        res.redirect("https://walletellaw.store");
+        res.redirect(process.env.VITE_MAIN_URL);
     } catch (error) {
-        if (error.response) {
-            console.error("Ошибка авторизации (API):", error.response.data);
-            res.status(500).send("Ошибка авторизации: " + JSON.stringify(error.response.data));
-        } else {
-            console.error("Ошибка авторизации (нет ответа):", error.message);
-            res.status(500).send("Ошибка авторизации: " + error.message);
-        }
+        console.error("Ошибка авторизации:", error?.response?.data || error.message);
+        res.status(500).json({ error: "Ошибка авторизации" });
     }
 });
 
-
 // Получение списка пользователей
-app.get("/api/users", async (req, res) => {
+app.get("/users", async (req, res) => {
     try {
         const [rows] = await db.execute("SELECT * FROM users");
         res.json(rows);
     } catch (error) {
         console.error("Ошибка получения пользователей:", error);
-        res.status(500).send("Ошибка получения пользователей");
+        res.status(500).json({ error: "Ошибка получения пользователей" });
     }
 });
 
 // Выход из системы
-app.get("/api/logout", (req, res) => {
+app.get("/logout", (req, res) => {
     res.clearCookie("discord_user");
     res.clearCookie("discord_token");
     res.status(200).json({ success: true });
 });
 
-// Эндпоинт для получения данных пользователя по discord_id через body
-app.post("/api/get-user", async (req, res) => {
-    const { discord_id } = req.body; // Получаем discord_id из тела запроса
+// Получение данных пользователя
+app.post("/get-user", async (req, res) => {
+    const { discord_id } = req.body;
 
     if (!discord_id) {
         return res.status(400).json({ error: "Не указан discord_id" });
     }
+
     try {
-        // Выполняем запрос к базе данных
         const [rows] = await db.execute("SELECT * FROM users WHERE discord_id = ?", [discord_id]);
 
         if (rows.length === 0) {
             return res.status(404).json({ error: "Пользователь не найден" });
         }
 
-        // Отправляем данные пользователя
         res.json(rows[0]);
     } catch (error) {
         console.error("Ошибка получения пользователя:", error);
@@ -162,35 +157,53 @@ app.post("/api/get-user", async (req, res) => {
     }
 });
 
-app.get("/api/get-quotes", async (req, res) => { 
+// Получение цитат
+app.get("/get-quotes", async (req, res) => {
     try {
         const [rows] = await db.execute("SELECT global_name, discord_id, avatar, quote, role FROM users");
 
         if (rows.length === 0) {
-            return res.status(404).json({ message: "Данные не найдены" });
+            return res.status(404).json({ error: "Данные не найдены" });
         }
 
         res.json(rows);
     } catch (error) {
-        console.error("Ошибка в /get-quotes: ", error);
+        console.error("Ошибка получения цитат:", error);
         res.status(500).json({ error: "Ошибка сервера" });
     }
 });
 
-// Сохранение цитаты пользователя
-app.post("/api/save-quote", async (req, res) => {
+// Сохранение цитаты
+app.post("/save-quote", async (req, res) => {
     const { discord_id, quote } = req.body;
 
+    // Проверяем наличие куки discord_token
+    if (!req.cookies || !req.cookies["discord_token"]) {
+        return res.status(401).json({ error: "Токен доступа отсутствует в куках" });
+    }
+    console.log(quote.length)
+    const userCookie = req.cookies["discord_token"]; // Получаем токен из куков
+
     if (!discord_id || !quote) {
-        return res.status(400).json({ error: "Не указаны discord_id или quote" });
+        return res.status(400).json({ error: "Не указаны обязательные данные" });
+    }
+    if (quote.length > 70) {
+        return res.status(400).json({ error: "Цитата должна быть до 70 символов" });
     }
 
     try {
-        // Обновляем цитату в базе данных
-        await db.execute(
-            "UPDATE users SET quote = ? WHERE discord_id = ?",
-            [quote, discord_id]
+        // Проверяем пользователя по токену
+        const [rows] = await db.execute(
+            "SELECT * FROM users WHERE discord_id = ? AND access_token = ?",
+            [discord_id, userCookie]
         );
+
+        if (rows.length === 0) {
+            return res.status(403).json({ error: "Несоответствие идентификаторов или недействительный токен" });
+        }
+
+        // Обновляем цитату
+        await db.execute("UPDATE users SET quote = ? WHERE discord_id = ?", [quote, discord_id]);
 
         res.status(200).json({ message: "Цитата успешно сохранена" });
     } catch (error) {
@@ -200,8 +213,7 @@ app.post("/api/save-quote", async (req, res) => {
 });
 
 
-
 // Запуск сервера
 app.listen(50001, () => {
-    console.log("Server start on 50001 port");
+    console.log("Server start on port 50001");
 });

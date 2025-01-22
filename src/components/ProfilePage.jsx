@@ -24,22 +24,29 @@ const ProfilePage = ({ user, userData }) => {
         }
 
         try {
-            // Отправляем запрос на сервер для сохранения цитаты
-            const response = await axios.post("/api/save-quote", {
-                discord_id: user.id,
-                quote: inputValue.trim(),
-            });
-
-            if (response.status === 200) {
-                setQuote(inputValue.trim());
-                setSuccess("Цитата успешно сохранена!");
-                setIsEditing(false);
-                setError("");
-            }
-        } catch (error) {
-            console.error("Ошибка сохранения цитаты:", error);
-            setError("Ошибка сохранения цитаты на сервере.");
-        }
+          const response = await axios.post(
+              "/api/save-quote",
+              { discord_id: user.id, quote: inputValue.trim() },
+              { withCredentials: true }
+          );
+      
+          if (response.status === 200) {
+              setQuote(inputValue.trim());
+              setSuccess("Цитата успешно сохранена!");
+              setIsEditing(false);
+              setError("");
+          }
+      } catch (error) {
+          console.error("Ошибка сохранения цитаты:", error);
+      
+          if (error.response) {
+              console.log("Ответ сервера:", error.response.data);
+              setError(error.response.data.error || "Ошибка сохранения цитаты на сервере.");
+          } else {
+              setError("Не удалось отправить запрос на сервер.");
+          }
+      }
+      
     };
 
     const cancelEdit = () => {
@@ -50,6 +57,13 @@ const ProfilePage = ({ user, userData }) => {
 
     const handleInputChange = (e) => {
         const value = e.target.value;
+        const validCharactersRegex = /^[\p{L}\p{N}\p{P}\p{Z}\p{Emoji}]*$/u;
+
+        if (!validCharactersRegex.test(value)) {
+            setError("Цитата может содержать только кириллицу, латиницу, цифры, знаки препинания и эмодзи.");
+            return;
+        }
+
         if (value.length <= maxLength) {
             setInputValue(value);
             setError("");
@@ -69,7 +83,7 @@ const ProfilePage = ({ user, userData }) => {
     const coins = userData?.coin?.toFixed(2) || "0.00";
 
     return (
-        <div className="flex flex-col items-center justify-center h-full text-white px-4">
+        <div className="flex flex-col items-center justify-center h-full text-white px-4 !z-10">
             {/* User Avatar */}
             <div className="relative mb-6">
                 <img
