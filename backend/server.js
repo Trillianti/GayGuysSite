@@ -181,7 +181,6 @@ app.post("/save-quote", async (req, res) => {
     if (!req.cookies || !req.cookies["discord_token"]) {
         return res.status(401).json({ error: "Токен доступа отсутствует в куках" });
     }
-    console.log(quote.length)
     const userCookie = req.cookies["discord_token"]; // Получаем токен из куков
 
     if (!discord_id || !quote) {
