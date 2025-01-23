@@ -4,6 +4,8 @@ const cors = require('cors');
 const db = require('./db'); // Подключение к базе данных
 require('dotenv').config({ path: '../.env' });
 const cookieParser = require('cookie-parser');
+const https = require('https');
+const fs = require('fs');
 
 const app = express();
 app.use(cors({
@@ -212,7 +214,11 @@ app.post("/save-quote", async (req, res) => {
 });
 
 
-// Запуск сервера
-app.listen(50001, () => {
-    console.log("Server start on port 50001");
+const options = {
+    key: fs.readFileSync('C:/nginx/certs/localhost.key'), // Путь к приватному ключу
+    cert: fs.readFileSync('C:/nginx/certs/localhost.crt') // Путь к сертификату
+};
+
+https.createServer(options, app).listen(50001, () => {
+    console.log('HTTPS Server started on port 50001');
 });
