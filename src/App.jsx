@@ -98,13 +98,13 @@ function App() {
     return (
         <div className="flex flex-col max-w-screen h-screen overflow-x-hidden bg-zinc-900">
             {/* Верхняя панель навигации */}
-            <div className="w-full !z-10">
+            <div className="w-full !z-10 flex justify-center">
                 <NavBar user={user} setUser={setUser} setPageId={setPageId} />
             </div>
             <div className="gradient-background absolute bottom-5 left-5"></div>
             <div className="gradient-background absolute bottom-5 right-5"></div>
             {/* Основной контент */}
-            <div className="h-full mb-3 z-10 pt-3 px-5">{renderPage()}</div>
+            <div className="h-full mb-3 z-10 mt-20 px-5">{renderPage()}</div>
         </div>
     )
 }
