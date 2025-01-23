@@ -197,7 +197,7 @@ const MainPage = () => {
       {/* Модальное окно */}
       {selectedStage && (
         <div
-          className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out z-20"
+          className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out z-50"
           onClick={() => setSelectedStage(null)}
         >
           <div
