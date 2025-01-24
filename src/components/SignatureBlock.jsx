@@ -67,7 +67,7 @@ const SignatureBlock = () => {
                     &nbsp;&nbsp;{user.global_name}
                   </p>
                 </div>
-                <div className="italic font-thin font-sans text-center">
+                <div className="italic font-thin font-sans text-center break-all">
                   {user.quote || "Пока нет цитаты"}
                 </div>
               </div>

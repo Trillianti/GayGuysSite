@@ -22,7 +22,7 @@ const Navbar = ({ user, setUser, setPageId }) => {
 
   return (
     <div className="py-3 fixed w-[90%]">
-      <div className="flex w-full h-20 bg-gray-700 text-white rounded-xl shadow-lg select-none items-center justify-between px-6">
+      <div className="flex w-full h-20 bg-zinc-700 text-white rounded-xl shadow-xl select-none items-center justify-between px-6">
         <div className="flex items-center cursor-pointer" onClick={() => setPageId(1)}>
           <img
             src="https://placehold.co/50"
