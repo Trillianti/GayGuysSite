@@ -1,24 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
-const symbols = ["🍒", "⭐", "🍋", "💎", "🍉", "🔔", "7️⃣"]; // Символы для барабанов
+const symbols = ["🍒", "⭐", "🍋", "💎", "🍉", "🔔", "7️⃣"];
+const SPIN_DURATION = 2000; // Длительность вращения
+const SYMBOL_HEIGHT = 80; // Высота символа
 
 const SlotsGame = () => {
-  const [slots, setSlots] = useState([
-    [...symbols], // Первый барабан
-    [...symbols], // Второй барабан
-    [...symbols], // Третий барабан
-  ]);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [balance, setBalance] = useState(5000);
+  const [balance, setBalance] = useState(1000);
   const [bet, setBet] = useState(100);
   const [message, setMessage] = useState("");
+  const [finalPositions, setFinalPositions] = useState([0, 0, 0]);
+  const [isAutoSpin, setIsAutoSpin] = useState(false);
 
-  const [reelPositions, setReelPositions] = useState([0, 0, 0]); // Позиция каждого барабана
+  // Рефы для контроля анимации каждого барабана
+  const reelRefs = [
+    useRef(null),
+    useRef(null),
+    useRef(null)
+  ];
 
-  // Обработка кнопки "Крутить"
   const handleSpin = () => {
     if (balance < bet) {
       setMessage("Недостаточно средств для ставки!");
+      setIsAutoSpin(false); // Остановить автопрокрутку при недостатке средств
       return;
     }
 
@@ -26,58 +30,52 @@ const SlotsGame = () => {
     setIsSpinning(true);
     setBalance((prev) => prev - bet);
 
+    // Генерируем финальные позиции
     const newPositions = [
-      Math.floor(Math.random() * symbols.length), // Случайная позиция для первого барабана
-      Math.floor(Math.random() * symbols.length), // Случайная позиция для второго барабана
-      Math.floor(Math.random() * symbols.length), // Случайная позиция для третьего барабана
+      Math.floor(Math.random() * symbols.length),
+      Math.floor(Math.random() * symbols.length),
+      Math.floor(Math.random() * symbols.length)
     ];
 
-    const spinIntervals = [];
-    slots.forEach((_, index) => {
-      spinIntervals[index] = setInterval(() => {
-        setReelPositions((prevPositions) => {
-          const updatedPositions = [...prevPositions];
-          updatedPositions[index] =
-            (prevPositions[index] - 1 + symbols.length) % symbols.length; // Сдвиг вверх
-          return updatedPositions;
-        });
-      }, 100); // Скорость вращения
+    // Различная длительность остановки для каждого барабана
+    const stopDelays = [1200, 1700, 2200];
+
+    // Анимация вращения для каждого барабана
+    reelRefs.forEach((ref, index) => {
+      if (ref.current) {
+        // Быстрое вращение
+        ref.current.style.transition = 'transform 0.05s linear';
+        
+        const spinInterval = setInterval(() => {
+          ref.current.style.transform = `translateY(-${Math.random() * SYMBOL_HEIGHT * symbols.length}px)`;
+        }, 20);
+
+        // Остановка барабана
+        setTimeout(() => {
+          clearInterval(spinInterval);
+          
+          // Плавная остановка на нужной позиции
+          ref.current.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1)';
+          ref.current.style.transform = `translateY(-${newPositions[index] * SYMBOL_HEIGHT}px)`;
+        }, stopDelays[index]);
+      }
     });
 
-    // Устанавливаем меньшую задержку для первого, среднюю для второго, большую для третьего барабана
-    const stopDelays = [
-      Math.floor(1000 + Math.random() * 1000), // 1000–1500 мс
-      Math.floor(2000 + Math.random() * 500), // 1500–2000 мс
-      Math.floor(2500 + Math.random() * 500), // 2000–2500 мс
-    ];
-
-    stopDelays.forEach((delay, index) => {
-      setTimeout(() => {
-        clearInterval(spinIntervals[index]); // Останавливаем вращение барабана
-        setReelPositions((prevPositions) => {
-          const updatedPositions = [...prevPositions];
-          updatedPositions[index] = newPositions[index]; // Устанавливаем конечную позицию
-          return updatedPositions;
-        });
-
-        if (index === slots.length - 1) {
-          setTimeout(() => {
-            setIsSpinning(false);
-            checkWin(newPositions);
-          }, 500);
-        }
-      }, delay);
-    });
+    // Завершение игры
+    setTimeout(() => {
+      setIsSpinning(false);
+      setFinalPositions(newPositions);
+      checkWin(newPositions);
+    }, SPIN_DURATION);
   };
 
-  // Проверка на выигрыш
-  const checkWin = (finalPositions) => {
-    const middleSymbols = finalPositions.map(
-      (pos, index) => symbols[(pos + 1) % symbols.length]
-    ); // Символы в средней линии
+  const checkWin = (positions) => {
+    const middleSymbols = positions.map(
+      (pos) => symbols[(pos + 1) % symbols.length]
+    );
 
     if (middleSymbols.every((symbol, _, arr) => symbol === arr[0])) {
-      const winAmount = bet * 10; // Выигрыш 10x от ставки
+      const winAmount = bet * 45;
       setBalance((prev) => prev + winAmount);
       setMessage(`🎉 Вы выиграли ${winAmount} монет! 🎉`);
     } else {
@@ -85,20 +83,60 @@ const SlotsGame = () => {
     }
   };
 
+  const handleAutoSpinToggle = () => {
+    setIsAutoSpin((prev) => !prev);
+  };
+
+  useEffect(() => {
+    if (isAutoSpin && !isSpinning) {
+      const autoSpinInterval = setInterval(() => {
+        if (balance >= bet) {
+          handleSpin();
+        } else {
+          clearInterval(autoSpinInterval);
+          setIsAutoSpin(false);
+        }
+      }, SPIN_DURATION + 100); 
+
+      return () => clearInterval(autoSpinInterval);
+    }
+  }, [isAutoSpin, isSpinning, balance, bet]);
+
+  const renderReel = (reelIndex) => {
+    return (
+      <div 
+        className="w-28 h-48 bg-gray-700 text-5xl rounded-lg shadow-xl border-2 overflow-hidden relative"
+      >
+        <div 
+          ref={reelRefs[reelIndex]}
+          className="absolute w-full flex flex-col"
+        >
+          {[...symbols, ...symbols, ...symbols].map((symbol, index) => (
+            <div 
+              key={index} 
+              className="flex items-center justify-center w-full"
+              style={{ height: `${SYMBOL_HEIGHT}px` }}
+            >
+              {symbol}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col items-center justify-center h-full text-center text-white">
       <h1 className="text-6xl font-extrabold mb-6 text-yellow-400 drop-shadow-lg">
         🎰 Слоты
       </h1>
-      <p className="text-lg text-gray-300 mb-4">Крути барабаны и выигрывай крупный джекпот!</p>
 
-      {/* Баланс и ставка */}
       <div className="flex items-center justify-center space-x-8 mb-8">
         <div className="text-2xl">
           Баланс: <span className="text-green-400 font-bold">{balance} монет</span>
         </div>
         <div className="text-2xl">
-          Ставка:{" "}
+          Ставка: {" "}
           <input
             type="number"
             value={bet}
@@ -110,42 +148,28 @@ const SlotsGame = () => {
         </div>
       </div>
 
-      {/* Барабаны */}
       <div className="flex space-x-6 mb-8">
-        {slots.map((reel, reelIndex) => (
-          <div
-            key={reelIndex}
-            className="w-28 h-48 bg-gray-700  text-5xl flex flex-col items-center justify-center rounded-lg shadow-xl border-2 overflow-hidden"
-          >
-            {Array(3)
-              .fill(0)
-              .map((_, i) => {
-                // Вычисляем отображаемый символ
-                const symbolIndex =
-                  (reelPositions[reelIndex] + i) % symbols.length;
-                return (
-                  <div
-                    key={i}
-                    className={`flex items-center justify-center w-full h-24`}
-                  >
-                    {symbols[symbolIndex]}
-                  </div>
-                );
-              })}
-          </div>
-        ))}
+        {[0, 1, 2].map(reelIndex => renderReel(reelIndex))}
       </div>
 
-      {/* Кнопка "Крутить" */}
-      <button
-        className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white text-2xl font-bold py-3 px-8 rounded-full transition-all disabled:opacity-50"
-        onClick={handleSpin}
-        disabled={isSpinning || balance < bet}
-      >
-        {isSpinning ? "Крутится..." : "Крутить"}
-      </button>
+      <div className="flex space-x-4">
+        <button
+          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white text-2xl font-bold py-3 px-8 rounded-full transition-all disabled:opacity-50 w-48"
+          onClick={handleSpin}
+          disabled={isSpinning || balance < bet}
+        >
+          {isSpinning ? "Крутится..." : "Крутить"}
+        </button>
 
-      {/* Сообщение результата */}
+        <button
+          className={`bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white text-xl font-bold py-2 px-4 rounded-full transition-all w-20 ${isAutoSpin ? "ring-4 ring-green-400" : ""}`}
+          onClick={handleAutoSpinToggle}
+          disabled={balance < bet}
+        >
+          {isAutoSpin ? "Стоп" : "Авто"}
+        </button>
+      </div>
+
       {message && (
         <p className="text-2xl font-bold mt-8 text-yellow-400 animate-bounce">
           {message}
