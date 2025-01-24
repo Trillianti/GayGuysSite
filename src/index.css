@@ -33,13 +33,29 @@ body, html {
 }
 
 
-.gradient-background {
-    width: 200px; /* Размер блока */
-    height: 200px;
-    border-radius: 20px; /* Скругленные углы */
-    background: linear-gradient(45deg, #00ff00, #00ffff, #0000ff);
-    filter: blur(300px); /* Размытие для мягкости границ */
-    box-shadow: 0 0 50px 30px rgba(0, 255, 255, 0.5);
+.gradient-circle {
+    border-radius: 50%;
+    background: linear-gradient(120deg, #ff8c00, #ff0080, #8000ff, #0088ff, #00ffaa);
+    background-size: 400% 400%; /* Увеличенный размер для более плавного эффекта */
+    animation: gradient-animation 8s ease infinite;
+    filter: blur(120px); /* Мягкость размытия для премиального эффекта */
+    box-shadow: 0 0 120px 40px rgba(255, 136, 255, 0.5), 0 0 60px 20px rgba(0, 255, 255, 0.3);
 }
 
-  
+/* Задержка анимации */
+.gradient-circle.delayed {
+    animation-delay: 4s; /* Задержка анимации в 3 секунды */
+}
+
+@keyframes gradient-animation {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
