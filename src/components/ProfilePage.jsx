@@ -1,156 +1,156 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState } from 'react';
+import axios from 'axios';
 
 const ProfilePage = ({ user, userData }) => {
-    const defaultQuote = "Установите цитату, нажав кнопку редактирования";
+    const defaultQuote = 'Установите цитату, нажав кнопку редактирования';
 
-    const [quote, setQuote] = useState(userData.quote || defaultQuote);
+    const [quote, setQuote] = useState(userData?.quote || defaultQuote);
     const [isEditing, setIsEditing] = useState(false);
     const [inputValue, setInputValue] = useState(quote);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
     const maxLength = 70;
+    const coins = Number(userData?.coin || 0).toFixed(2);
 
     const saveQuote = async () => {
-        if (!inputValue.trim()) {
-            setError("Цитата не может быть пустой.");
-            return;
-        }
-
-        if (inputValue.trim().length > maxLength) {
-            setError("Цитата не должна превышать 70 символов.");
-            return;
-        }
+        if (!inputValue.trim()) return setError('Цитата не может быть пустой.');
+        if (inputValue.trim().length > maxLength)
+            return setError('Цитата не должна превышать 70 символов.');
 
         try {
-          const response = await axios.post(
-              "/api/save-quote",
-              { discord_id: user.id, quote: inputValue.trim() },
-              { withCredentials: true }
-          );
-      
-          if (response.status === 200) {
-              setQuote(inputValue.trim());
-              setSuccess("Цитата успешно сохранена!");
-              setIsEditing(false);
-              setError("");
-          }
-      } catch (error) {
-          console.error("Ошибка сохранения цитаты:", error);
-      
-          if (error.response) {
-              console.log("Ответ сервера:", error.response.data);
-              setError(error.response.data.error || "Ошибка сохранения цитаты на сервере.");
-          } else {
-              setError("Не удалось отправить запрос на сервер.");
-          }
-      }
-      
+            const response = await axios.post(
+                '/api/save-quote',
+                { discord_id: user.id, quote: inputValue.trim() },
+                { withCredentials: true },
+            );
+
+            if (response.status === 200) {
+                setQuote(inputValue.trim());
+                setSuccess('Цитата успешно сохранена!');
+                setIsEditing(false);
+                setError('');
+            }
+        } catch (error) {
+            setError('Ошибка при сохранении цитаты');
+        }
     };
 
     const cancelEdit = () => {
         setInputValue(quote);
         setIsEditing(false);
-        setError("");
+        setError('');
     };
 
     const handleInputChange = (e) => {
         const value = e.target.value;
-        const validCharactersRegex = /^[\p{L}\p{N}\p{P}\p{Z}\p{Emoji}]*$/u;
-
-        if (!validCharactersRegex.test(value)) {
-            setError("Цитата может содержать только кириллицу, латиницу, цифры, знаки препинания и эмодзи.");
-            return;
-        }
-
         if (value.length <= maxLength) {
             setInputValue(value);
-            setError("");
+            setError('');
         } else {
-            setError("Цитата не должна превышать 70 символов.");
+            setError('Цитата не должна превышать 70 символов.');
         }
     };
 
-    if (!user) {
+    if (!user || !userData) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-gray-900 to-gray-800 text-white">
-                <h1 className="text-3xl font-bold">Пользователь не авторизован</h1>
+            <div className="flex flex-col items-center justify-center h-full text-white animate-fadeIn px-4">
+                <div className="w-28 h-28 mb-6 rounded-full bg-zinc-700 animate-pulse" />
+                <div className="w-48 h-6 mb-3 rounded bg-zinc-700 animate-pulse" />
+                <div className="w-full max-w-md bg-zinc-800 p-6 rounded-xl shadow-lg space-y-4">
+                    <div className="w-32 h-5 rounded bg-zinc-700 animate-pulse" />
+                    <div className="w-40 h-4 rounded bg-zinc-700 animate-pulse" />
+                    <div className="w-24 h-4 rounded bg-zinc-700 animate-pulse" />
+                    <div className="w-36 h-4 rounded bg-zinc-700 animate-pulse" />
+                </div>
+                <p className="text-sm text-gray-400 mt-6 animate-pulse">
+                    Загружаем ваш профиль...
+                </p>
             </div>
         );
     }
 
-    const coins = userData?.coin?.toFixed(2) || "0.00";
-
     return (
-        <div className="flex flex-col items-center justify-center h-full text-white px-4 !z-10">
-            {/* User Avatar */}
-            <div className="relative mb-6">
+        <div className="flex flex-col items-center justify-center h-full px-4 text-white">
+            <div className="relative mb-6 ring-4 ring-indigo-500 ring-offset-4 ring-offset-black rounded-full shadow-xl">
                 <img
                     src={`https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`}
                     alt="User Avatar"
-                    className="w-36 h-36 rounded-full shadow-2xl border-4 border-blue-500"
+                    className="w-40 h-40 rounded-full object-cover"
                 />
             </div>
 
-            {/* User Name */}
-            <h1 className="text-5xl font-extrabold mb-4 text-center">{user.global_name || "Имя пользователя"}</h1>
+            <h1 className="text-4xl font-extrabold mb-2 drop-shadow">
+                {user.global_name || 'Имя пользователя'}
+            </h1>
+            <p className="text-indigo-400 mb-8 font-medium drop-shadow">
+                @{user.username}
+            </p>
 
-            {/* User Info Card */}
-            <div className="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-lg">
-                <h2 className="text-3xl font-semibold mb-6">Информация</h2>
-                <p className="mb-4 text-lg">
-                    <span className="font-bold">Монеты:</span> {coins}
-                </p>
-                <p className="mb-4 text-lg">
-                    <span className="font-bold">Логин:</span> {user.username || "Не указано"}
-                </p>
-                <p className="mb-6 text-lg">
-                    <span className="font-bold">ID:</span> {user.id}
-                </p>
+            <div className="w-full max-w-xl p-8 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl space-y-6">
+                <div>
+                    <h2 className="text-2xl font-semibold mb-2">Информация</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-white">
+                        <div className="rounded-lg p-4 bg-white/10 backdrop-blur border border-white/10">
+                            <span className="block text-indigo-400 font-semibold text-xs mb-1">
+                                Discord ID
+                            </span>
+                            {user.id}
+                        </div>
+                        <div className="rounded-lg p-4 bg-white/10 backdrop-blur border border-white/10">
+                            <span className="block text-indigo-400 font-semibold text-xs mb-1">
+                                Монеты
+                            </span>
+                            {coins}
+                        </div>
+                    </div>
+                </div>
 
-                {/* Quote Section */}
-                <div className="mb-4">
-                    <h3 className="font-bold text-lg mb-2">Цитата:</h3>
+                <div className="pt-4 border-t border-white/10">
+                    <h3 className="text-xl font-semibold mb-3">Цитата</h3>
                     {isEditing ? (
                         <div className="space-y-3">
                             <input
                                 type="text"
                                 value={inputValue}
                                 onChange={handleInputChange}
-                                className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-4 py-2 bg-white/10 text-white border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 backdrop-blur"
                                 placeholder="Введите вашу цитату"
                             />
-                            <p
-                                className={`text-sm ${
-                                    inputValue.length > maxLength ? "text-red-500" : "text-gray-400"
-                                }`}
-                            >
-                                {inputValue.length}/{maxLength}
-                            </p>
-                            {error && <p className="text-red-500 text-sm">{error}</p>}
-                            {success && <p className="text-green-500 text-sm">{success}</p>}
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-gray-400">
+                                    {inputValue.length}/{maxLength}
+                                </span>
+                                {error && (
+                                    <p className="text-red-400">{error}</p>
+                                )}
+                                {success && (
+                                    <p className="text-green-400">{success}</p>
+                                )}
+                            </div>
                             <div className="flex space-x-4">
                                 <button
                                     onClick={saveQuote}
-                                    className="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all font-semibold"
+                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-semibold transition"
                                 >
                                     Сохранить
                                 </button>
                                 <button
                                     onClick={cancelEdit}
-                                    className="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all font-semibold"
+                                    className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition"
                                 >
-                                    Отменить
+                                    Отмена
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <div className="flex justify-between items-center">
-                            <p className="text-gray-300 italic">{quote}</p>
+                        <div className="flex justify-between items-center bg-white/10 p-4 rounded-lg border border-white/10 backdrop-blur">
+                            <p className="italic text-white/80 max-w-[70%]">
+                                “{quote}”
+                            </p>
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all font-semibold"
+                                className="text-sm px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-semibold transition"
                             >
                                 Редактировать
                             </button>
