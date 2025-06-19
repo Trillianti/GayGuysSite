@@ -20,7 +20,7 @@ const ProfilePage = ({ user, userData }) => {
 
         try {
             const response = await axios.post(
-                '/api/save-quote',
+                '/api/users',
                 { discord_id: user.id, quote: inputValue.trim() },
                 { withCredentials: true },
             );

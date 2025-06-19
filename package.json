@@ -11,6 +11,7 @@
     "start": "vite preview --port 50000"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^1.0.6",
     "@tailwindcss/typography": "^0.5.16",
     "axios": "^1.7.9",
@@ -20,6 +21,7 @@
     "dotenv": "^16.4.7",
     "heroicons": "^2.2.0",
     "js-cookie": "^3.0.5",
+    "lucide-react": "^0.518.0",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.3.0",
     "react-confetti": "^6.2.2",

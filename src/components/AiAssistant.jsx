@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import rehypeRaw from 'rehype-raw';
+import ModelSelect from './ModelSelect';
 
 const AiAssistant = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -15,11 +16,26 @@ const AiAssistant = () => {
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [isLoading, setIsLoading] = useState(false);
     const [prevChat, setPrevChat] = useState([]); // 👈 память всех сообщений
+    const [selectedModel, setSelectedModel] = useState(() => {
+        return (
+            localStorage.getItem('ai_model') || 'deepseek-ai/DeepSeek-R1-0528'
+        );
+    });
+
+    useEffect(() => {
+        localStorage.setItem('ai_model', selectedModel);
+    }, [selectedModel]);
 
     const assistantRef = useRef(null);
     const resizeRef = useRef(null);
     const textareaRef = useRef(null);
     const messagesEndRef = useRef(null);
+
+    const MODEL_OPTIONS = [
+        { label: 'DeepSeek-R1', value: 'deepseek-ai/DeepSeek-R1-0528' },
+        { label: 'GPT-4 Turbo', value: 'gpt-4-turbo' },
+        { label: 'Mixtral', value: 'mistralai/mixtral-8x7b' },
+    ];
 
     useEffect(() => {
         const handleMouseMove = (e) => {
@@ -99,6 +115,7 @@ const AiAssistant = () => {
                 body: JSON.stringify({
                     messages: formattedMessages,
                     prev_messages: prevChat,
+                    model: selectedModel, // 💥 добавлено
                 }),
             });
 
@@ -157,12 +174,18 @@ const AiAssistant = () => {
                 >
                     <div className="flex justify-between items-center p-4 border-b border-white/10">
                         <h2 className="font-semibold">AI Ассистент</h2>
-                        <button
-                            onClick={() => setIsOpen(false)}
-                            className="text-white/60 hover:text-white"
-                        >
-                            ✕
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <ModelSelect
+                                selectedModel={selectedModel}
+                                setSelectedModel={setSelectedModel}
+                            />
+                            <button
+                                onClick={() => setIsOpen(false)}
+                                className="text-white/60 hover:text-white"
+                            >
+                                ✕
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-3 space-y-2">

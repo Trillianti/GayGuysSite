@@ -5,11 +5,7 @@ import cookieParser from 'cookie-parser';
 import https from 'https';
 import fs from 'fs';
 import dotenv from 'dotenv';
-import db from './db.js'; // Убедись, что db.js тоже использует export default
-
-import http from 'http';
-import { Server } from 'socket.io';
-import { setupCrashGame } from './crash/crashEngine.js';
+import db from './db.js';
 
 dotenv.config({ path: '../.env' });
 
@@ -20,13 +16,14 @@ import tokenRoutes from './routes/token.js';
 import publicProfileRoutes from './routes/publicProfile.js';
 import slotsRouter from './routes/slots.js';
 import chatRouter from './routes/aiChat.js';
+import quoteRouter from './routes/quoteRouter.js';
 
 const app = express();
 
 app.use(
     cors({
-        origin: process.env.VITE_MAIN_URL, // URL вашего фронтенда
-        credentials: true, // Разрешить передачу cookies
+        origin: process.env.VITE_MAIN_URL,
+        credentials: true,
     }),
 );
 
@@ -61,13 +58,14 @@ function getRoleId(roles) {
 }
 
 // Новые API-маршруты
-app.use('/api', userRoutes);
-app.use('/api/wallet', walletRoutes);
-app.use('/api/ggc', ggcRoutes);
-app.use('/api/tokens', tokenRoutes);
+app.use('/users', userRoutes);
+app.use('/wallet', walletRoutes);
+app.use('/ggc', ggcRoutes);
+app.use('/tokens', tokenRoutes);
 app.use('/profile', publicProfileRoutes);
 app.use('/slots', slotsRouter);
 app.use('/chat', chatRouter);
+app.use('/qoute', quoteRouter);
 
 // Авторизация через Discord
 app.get('/auth/discord/callback', async (req, res) => {
@@ -156,116 +154,6 @@ app.get('/auth/discord/callback', async (req, res) => {
             error?.response?.data || error.message,
         );
         res.status(500).json({ error: 'Ошибка авторизации' });
-    }
-});
-
-// Получение списка пользователей
-app.get('/users', async (req, res) => {
-    try {
-        const [rows] = await db.execute('SELECT * FROM users');
-        res.json(rows);
-    } catch (error) {
-        console.error('Ошибка получения пользователей:', error);
-        res.status(500).json({ error: 'Ошибка получения пользователей' });
-    }
-});
-
-// Выход из системы
-app.get('/logout', (req, res) => {
-    res.clearCookie('discord_user');
-    res.clearCookie('discord_token');
-    res.status(200).json({ success: true });
-});
-
-// Получение данных пользователя
-app.post('/get-user', async (req, res) => {
-    const { discord_id } = req.body;
-
-    if (!discord_id) {
-        return res.status(400).json({ error: 'Не указан discord_id' });
-    }
-
-    try {
-        const [rows] = await db.execute(
-            'SELECT * FROM users WHERE discord_id = ?',
-            [discord_id],
-        );
-
-        if (rows.length === 0) {
-            return res.status(404).json({ error: 'Пользователь не найден' });
-        }
-
-        res.json(rows[0]);
-    } catch (error) {
-        console.error('Ошибка получения пользователя:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Получение цитат
-app.get('/get-quotes', async (req, res) => {
-    try {
-        const [rows] = await db.execute(
-            'SELECT global_name, discord_id, avatar, quote, role FROM users',
-        );
-
-        if (rows.length === 0) {
-            return res.status(404).json({ error: 'Данные не найдены' });
-        }
-
-        res.json(rows);
-    } catch (error) {
-        console.error('Ошибка получения цитат:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Сохранение цитаты
-app.post('/save-quote', async (req, res) => {
-    const { discord_id, quote } = req.body;
-
-    // Проверяем наличие куки discord_token
-    if (!req.cookies || !req.cookies['discord_token']) {
-        return res
-            .status(401)
-            .json({ error: 'Токен доступа отсутствует в куках' });
-    }
-    const userCookie = req.cookies['discord_token']; // Получаем токен из куков
-
-    if (!discord_id || !quote) {
-        return res
-            .status(400)
-            .json({ error: 'Не указаны обязательные данные' });
-    }
-    if (quote.length > 70) {
-        return res
-            .status(400)
-            .json({ error: 'Цитата должна быть до 70 символов' });
-    }
-
-    try {
-        // Проверяем пользователя по токену
-        const [rows] = await db.execute(
-            'SELECT * FROM users WHERE discord_id = ? AND access_token = ?',
-            [discord_id, userCookie],
-        );
-
-        if (rows.length === 0) {
-            return res.status(403).json({
-                error: 'Несоответствие идентификаторов или недействительный токен',
-            });
-        }
-
-        // Обновляем цитату
-        await db.execute('UPDATE users SET quote = ? WHERE discord_id = ?', [
-            quote,
-            discord_id,
-        ]);
-
-        res.status(200).json({ message: 'Цитата успешно сохранена' });
-    } catch (error) {
-        console.error('Ошибка сохранения цитаты:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
 

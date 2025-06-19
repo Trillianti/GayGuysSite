@@ -27,7 +27,7 @@ function App() {
 
     const fetchUserData = async (discordId) => {
         try {
-            const response = await axios.post('/api/get-user', {
+            const response = await axios.post('/api/users', {
                 discord_id: discordId,
             });
             return response.data;

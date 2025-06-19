@@ -9,6 +9,46 @@ dotenv.config({ path: '../../.env' });
 const JWT_SECRET = process.env.JWT_SECRET;
 const router = express.Router();
 
+router.get('/', async (req, res) => {
+    try {
+        const [rows] = await db.execute('SELECT * FROM users');
+        res.json(rows);
+    } catch (error) {
+        console.error('Ошибка получения пользователей:', error);
+        res.status(500).json({ error: 'Ошибка получения пользователей' });
+    }
+});
+
+router.post('/', async (req, res) => {
+    const { discord_id } = req.body;
+
+    if (!discord_id) {
+        return res.status(400).json({ error: 'Не указан discord_id' });
+    }
+
+    try {
+        const [rows] = await db.execute(
+            'SELECT * FROM users WHERE discord_id = ?',
+            [discord_id],
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Пользователь не найден' });
+        }
+
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Ошибка получения пользователя:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+router.get('/logout', (req, res) => {
+    res.clearCookie('discord_user');
+    res.clearCookie('discord_token');
+    res.status(200).json({ success: true });
+});
+
 router.post('/register', async (req, res) => {
     try {
         const { username, email, password } = req.body;

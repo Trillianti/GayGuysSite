@@ -15,7 +15,7 @@ const SignatureBlock = () => {
     useEffect(() => {
         const fetchSignatureBlock = async () => {
             try {
-                const response = await axios.get('/api/get-quotes');
+                const response = await axios.get('/api/users');
                 const users = response.data;
 
                 const grouped = users.reduce((acc, user) => {
